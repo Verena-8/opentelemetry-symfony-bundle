@@ -7,11 +7,13 @@ namespace Traceway\OpenTelemetryBundle\Tests\Functional;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
+use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\Messenger\Middleware\HandleMessageMiddleware;
 use Symfony\Component\Messenger\Middleware\SendMessageMiddleware;
 use Traceway\OpenTelemetryBundle\Command\Doctor\Support\CheckRunner;
 use Traceway\OpenTelemetryBundle\Command\DoctorCommand;
 use Traceway\OpenTelemetryBundle\Doctrine\Middleware\MeteredMiddleware as DoctrineMeteredMiddleware;
+use Traceway\OpenTelemetryBundle\EventDispatcher\TraceableEventDispatcher;
 use Traceway\OpenTelemetryBundle\EventSubscriber\ConsoleSubscriber;
 use Traceway\OpenTelemetryBundle\EventSubscriber\OpenTelemetryMetricsSubscriber;
 use Traceway\OpenTelemetryBundle\EventSubscriber\OpenTelemetrySubscriber;
@@ -92,6 +94,26 @@ final class BundleBootTest extends TestCase
 
         self::assertFalse($container->has(OpenTelemetrySubscriber::class));
         self::assertInstanceOf(Tracing::class, $container->get(TracingInterface::class));
+    }
+
+    public function testKernelTracingLeavesTheEventDispatcherAloneByDefault(): void
+    {
+        $container = $this->boot();
+
+        self::assertNotInstanceOf(TraceableEventDispatcher::class, $container->get('event_dispatcher'));
+    }
+
+    public function testKernelTracingDecoratesTheEventDispatcher(): void
+    {
+        $container = $this->boot(['traces' => ['kernel' => ['enabled' => true]]]);
+
+        $dispatcher = $container->get('event_dispatcher');
+        self::assertInstanceOf(TraceableEventDispatcher::class, $dispatcher);
+        // RegisterListenersPass registered the application's listeners, lazily, through the decorator.
+        self::assertNotEmpty($dispatcher->getListeners(KernelEvents::REQUEST));
+        self::assertNotNull($dispatcher->getListenerPriority(KernelEvents::REQUEST, $dispatcher->getListeners(KernelEvents::REQUEST)[0]));
+
+        $container->get('services_resetter')->reset();
     }
 
     public function testConsoleDisabledRemovesSubscriber(): void

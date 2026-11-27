@@ -17,6 +17,8 @@ Doctrine spans are usually the bulk of what a Symfony app exports, and two optio
 - `traces.doctrine.record_statements` puts the full SQL on every DB span (`db.query.text`). It is off by default; a span with it is typically 3 to 5 times the size of one without.
 - `traces.doctrine.max_spans_per_trace` caps the DB spans one trace may carry. A handler that runs thousands of single-row statements in a loop otherwise produces one span each; past the cap the statements still run, untraced, and the parent span reports how many were skipped in `traceway.db.spans_dropped`.
 
+`traces.kernel` (off by default) adds five or six INTERNAL spans to every traced request: one per kernel event and one for the controller. The decorated event dispatcher costs about 1 µs per kernel event when it creates no span (SDK inactive, or no request span), and about 9 µs per span it creates, before export. Enable it where you investigate request latency, or combine it with sampling.
+
 A whole message type can be taken out of tracing with `traces.messenger.excluded_messages`. Combined with `doctrine.only_with_parent` (the default) its handler's queries have no parent and are not traced either.
 
 Metrics under PHP-FPM deserve the same care: every request is a process, so every request exports a complete set of histograms, and the SDK's `process` resource detector stamps `process.pid` on each export. A backend then sees one series per worker that can never aggregate. Either leave `metrics.doctrine` off under FPM, or set `OTEL_PHP_DETECTORS` to a list without `process` (for example `env,host,os,sdk,sdk_provided`) so all workers of a host share one identity.

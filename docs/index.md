@@ -17,6 +17,7 @@ Pure-PHP OpenTelemetry instrumentation for Symfony. Supports PHP 8.1+ on Symfony
 | **Doctrine DBAL** | CLIENT | Parameterised SQL (opt-in), transactions, db system/namespace auto-detection. DBAL 3.6+ and 4.x CI-tested |
 | **Cache** | INTERNAL | `get` (hit/miss), `delete`, `invalidateTags` with pool name. Requires `symfony/cache` |
 | **Twig** | INTERNAL | Template name, nested includes. Requires `twig/twig` |
+| **HTTP kernel** (opt-in) | INTERNAL | One span per kernel event (`kernel.request`, `kernel.controller`, `kernel.response`…) and one for the controller, under the request span. See [Kernel tracing](configuration.md#kernel-tracing) |
 | **Monolog** | — | Inject `trace_id`, `span_id` + `trace_flags` into every log record. Opt-in OTel Logs API export with per-channel scope |
 
 Also: Server-Timing response headers and full [semantic-conventions conformance](semantic-conventions.md).

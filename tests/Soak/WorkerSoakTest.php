@@ -45,6 +45,7 @@ final class WorkerSoakTest extends TestCase
         'cache.get',
         'process SoakMessage', 'send SoakMessage',
         'twig.render page', 'twig.render part',
+        'kernel.request', 'kernel.controller', 'kernel.controller_arguments', 'closure', 'kernel.response',
     ];
 
     private string $dir;
