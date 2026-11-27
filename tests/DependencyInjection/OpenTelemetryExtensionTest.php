@@ -8,8 +8,10 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Definition;
+use Symfony\Component\DependencyInjection\Reference;
 use Traceway\OpenTelemetryBundle\DependencyInjection\OpenTelemetryExtension;
 use Traceway\OpenTelemetryBundle\Doctrine\Middleware\TraceableMiddleware as DoctrineTraceableMiddleware;
+use Traceway\OpenTelemetryBundle\EventDispatcher\TraceableEventDispatcher;
 use Traceway\OpenTelemetryBundle\EventSubscriber\ConsoleSubscriber;
 use Traceway\OpenTelemetryBundle\EventSubscriber\OpenTelemetryMetricsSubscriber;
 use Traceway\OpenTelemetryBundle\EventSubscriber\OpenTelemetrySubscriber;
@@ -148,6 +150,7 @@ final class OpenTelemetryExtensionTest extends TestCase
                 'twig' => ['enabled' => true],
                 'scheduler' => ['enabled' => true],
                 'mailer' => ['enabled' => true],
+                'kernel' => ['enabled' => true],
             ],
         ]);
 
@@ -163,6 +166,30 @@ final class OpenTelemetryExtensionTest extends TestCase
         self::assertFalse($container->has(SchedulerSubscriber::class));
         self::assertFalse($container->has(TraceableMailer::class));
         self::assertFalse($container->has(TraceableTransports::class));
+        self::assertFalse($container->has('open_telemetry.kernel.event_dispatcher'));
+    }
+
+    public function testKernelTracingIsNotRegisteredByDefault(): void
+    {
+        $container = $this->buildContainer([]);
+
+        self::assertFalse($container->has('open_telemetry.kernel.event_dispatcher'));
+        self::assertFalse($container->has(TraceableEventDispatcher::class));
+    }
+
+    public function testKernelTracingDecoratesTheEventDispatcherInsideTheProfiler(): void
+    {
+        $container = $this->buildContainer(['traces' => ['tracer_name' => 'app', 'error_status_threshold' => 501, 'kernel' => ['enabled' => true]]]);
+
+        $definition = $container->getDefinition('open_telemetry.kernel.event_dispatcher');
+        self::assertSame(TraceableEventDispatcher::class, $definition->getClass());
+        // Priority 1 is inside debug.event_dispatcher (priority 0): the profiler keeps seeing every listener.
+        self::assertSame(['event_dispatcher', null, 1, ContainerInterface::IGNORE_ON_INVALID_REFERENCE], $definition->getDecoratedService());
+        self::assertEquals(new Reference('.inner'), $definition->getArgument('$dispatcher'));
+        self::assertSame('app', $definition->getArgument('$tracerName'));
+        self::assertSame(501, $definition->getArgument('$errorStatusThreshold'));
+        self::assertSame([['method' => 'reset']], $definition->getTag('kernel.reset'));
+        self::assertTrue($container->hasAlias(TraceableEventDispatcher::class));
     }
 
     public function testConsoleSubscriberRemovedWhenDisabled(): void

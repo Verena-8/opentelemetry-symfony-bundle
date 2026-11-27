@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Kernel tracing** (`traces.kernel`, default off) — the request span is split into the steps of the HTTP kernel: an INTERNAL span per `kernel.request`, `kernel.controller`, `kernel.controller_arguments`, `kernel.view`, `kernel.response` and `kernel.exception`, with a `kernel.event` attribute, and one for the controller, named after it (`ArticleController::show`) with `code.function.name`. The controller span is active while the controller runs, so its queries and HTTP calls are grouped under it. `kernel.request`'s span is created when the event ends, since the request span is started by one of its listeners; spans its listeners open stay under the request span. An HTTP exception below `error_status_threshold` does not mark its step as failed. The bundle decorates `event_dispatcher` inside the profiler's decorator, so the profiler keeps seeing every listener. See [Kernel tracing](docs/configuration.md#kernel-tracing).
+
 ## [4.2.0] - 2026-11-22
 
 ### Added

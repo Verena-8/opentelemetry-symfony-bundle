@@ -29,7 +29,7 @@ Chosen so task-oriented backends group telemetry usefully; all are spec-permitte
 | `db.query.text` | sanitize, don't collect by default | **off by default**; opt-in via `traces.doctrine.record_statements: true` records verbatim (prepared statements are placeholder-safe) | opt-in is spec-sanctioned (MAY) |
 | `messaging.system` | well-known broker list | `symfony_messenger` / `symfony_mailer` / `symfony_scheduler` | custom values are explicitly allowed |
 
-Custom attributes (`console.command`, `cache.*`, `twig.*`, `scheduler.*`, `messaging.message.class`, `traceway.distributed_trace_id`, `traceway.db.spans_dropped`) cover areas with no registered convention yet.
+Custom attributes (`console.command`, `kernel.event`, `cache.*`, `twig.*`, `scheduler.*`, `messaging.message.class`, `traceway.distributed_trace_id`, `traceway.db.spans_dropped`) cover areas with no registered convention yet.
 
 ## Known limitations
 

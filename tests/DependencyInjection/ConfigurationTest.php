@@ -57,6 +57,7 @@ final class ConfigurationTest extends TestCase
         self::assertTrue($config['traces']['scheduler']['enabled']);
         self::assertTrue($config['traces']['mailer']['enabled']);
         self::assertFalse($config['traces']['mailer']['record_subject']);
+        self::assertFalse($config['traces']['kernel']['enabled'], 'kernel tracing is opt-in');
 
         // logs
         self::assertTrue($config['logs']['correlation']['enabled']);
@@ -424,6 +425,12 @@ final class ConfigurationTest extends TestCase
         yield 'http_server' => ['http_server'];
         yield 'http_client' => ['http_client'];
         yield 'mailer' => ['mailer'];
+    }
+
+    public function testKernelTracingCanBeEnabled(): void
+    {
+        self::assertTrue($this->process([['traces' => ['kernel' => ['enabled' => true]]]])['traces']['kernel']['enabled']);
+        self::assertTrue($this->process([['traces' => ['kernel' => null]]])['traces']['kernel']['enabled'], 'the bare key enables it, like other canBeEnabled nodes');
     }
 
     public function testEmptyExcludedPathEntriesAreDropped(): void

@@ -56,6 +56,9 @@ open_telemetry:
             enabled: true
             excluded_templates: ['@WebProfiler/', '@Debug/']
 
+        kernel:
+            enabled: false                    # true = a span per kernel event and one for the controller, see "Kernel tracing" below
+
     metrics:
         enabled: false
         meter_name: 'opentelemetry-symfony'
@@ -104,6 +107,33 @@ open_telemetry:
 ```
 
 Upgrading from v1.x? See [UPGRADE-2.0.md](../UPGRADE-2.0.md) for the flat→nested mapping and migration notes.
+
+## Kernel tracing
+
+The request span tells how long a request took, not where the time went before and after the controller. `traces.kernel.enabled: true` splits it into the steps of the HTTP kernel:
+
+```
+GET /articles/{id}
+├─ kernel.request
+├─ kernel.controller
+├─ kernel.controller_arguments
+├─ ArticleController::show
+│  └─ SELECT article
+└─ kernel.response
+```
+
+- `kernel.request`, `kernel.controller`, `kernel.controller_arguments`, `kernel.view`, `kernel.response` and `kernel.exception` each get an INTERNAL span with a `kernel.event` attribute.
+- The controller gets an INTERNAL span named after it, with `code.function.name`. It runs from the end of `kernel.controller_arguments` to the next kernel event, and is active meanwhile, so the controller's queries and HTTP calls are its children.
+- `kernel.request` is the one step whose span is not active while it runs: the request span itself is started by a `kernel.request` listener, so this span is created when the event ends, from the time it started. Spans opened by its listeners, such as a query from a security user provider, are children of the request span. They still fall within `kernel.request` on the timeline.
+- An HTTP exception below `error_status_threshold`, such as the router's 404, does not mark its step as failed, like the request span.
+
+It is off by default because it adds five or six spans to every traced request. To find the slowest step of a route:
+
+```
+{ span.http.route = "/articles/{id}" } >> { span.kernel.event != nil } | quantile_over_time(duration, .95) by (name)
+```
+
+In dev, the profiler keeps seeing every listener: the bundle decorates `event_dispatcher` inside the profiler's own decorator.
 
 ## Environment Variables
 

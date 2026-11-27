@@ -64,7 +64,7 @@ bin/console traceway:doctor
 
 ## What Gets Traced
 
-HTTP requests (with route templates), Console commands, outgoing HTTP through Symfony HttpClient, any PSR-18 client and Guzzle, Messenger, Scheduler, Mailer, Doctrine DBAL, Cache, and Twig — plus Monolog `trace_id`/`span_id` correlation and opt-in OTel log export. Each subsystem is individually toggleable. See **[docs/index.md](docs/index.md)** for the per-component span breakdown.
+HTTP requests (with route templates), Console commands, outgoing HTTP through Symfony HttpClient, any PSR-18 client and Guzzle, Messenger, Scheduler, Mailer, Doctrine DBAL, Cache, Twig and, opt-in, the steps of the HTTP kernel — plus Monolog `trace_id`/`span_id` correlation and opt-in OTel log export. Each subsystem is individually toggleable. See **[docs/index.md](docs/index.md)** for the per-component span breakdown.
 
 ## Semantic Conventions
 

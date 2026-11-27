@@ -52,6 +52,7 @@ final class SoakKernel extends Kernel
                     'doctrine' => ['enabled' => true, 'record_statements' => true],
                     'twig' => ['enabled' => true],
                     'cache' => ['enabled' => true],
+                    'kernel' => ['enabled' => true],
                 ],
                 'metrics' => [
                     'enabled' => true,
